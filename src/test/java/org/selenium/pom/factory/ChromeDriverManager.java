@@ -12,7 +12,7 @@ public class ChromeDriverManager implements DriverManager {
         WebDriverManager.chromedriver().cachePath("drivers").setup();
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--remote-allow-origins=*");
-        options.addArguments("--headless");
+        //options.addArguments("--headless");
         WebDriver driver = new ChromeDriver(options);
         driver.manage().window().maximize();
         return driver;
