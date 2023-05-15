@@ -1,0 +1,66 @@
+package org.selenium.pom.tests;
+
+import org.selenium.pom.api.actions.CartApi;
+import org.selenium.pom.api.actions.SignUpApi;
+import org.selenium.pom.base.BaseTest;
+import org.selenium.pom.objects.Product;
+import org.selenium.pom.objects.User;
+import org.selenium.pom.pages.AccountPage;
+import org.selenium.pom.pages.CheckoutPage;
+import org.selenium.pom.utils.FakerUtils;
+import org.testng.annotations.Test;
+
+import java.io.IOException;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+
+public class LoginTest extends BaseTest {
+
+    @Test
+    public void loginDuringCheckout() throws IOException {
+        User user = new User("demouser" + new FakerUtils().generateRandomNumber(),
+                "demopwd" + new FakerUtils().generateRandomNumber(),
+                "demouser" + new FakerUtils().generateRandomNumber() + "@a.com");
+        SignUpApi signUpApi = new SignUpApi();
+        signUpApi.register(user);
+        CartApi cartApi = new CartApi();
+        Product product = new Product(1215);
+        cartApi.addToCart(product.getId(), 1);
+
+        CheckoutPage checkoutPage = new CheckoutPage(getDriver()).load();
+        injectCookiesToBrowser(cartApi.getCookies());
+        checkoutPage.load()
+                .clickHereToLoginLink()
+                .login(user.getUsername(), user.getPassword());
+
+        assertTrue(checkoutPage.getProductName().contains(product.getName()));
+    }
+
+    @Test
+    public void shouldNotLoginWithNonExisitngUser() {
+        User user = new User("demouser" + new FakerUtils().generateRandomNumber(),
+                "demopwd" + new FakerUtils().generateRandomNumber(),
+                "demouser" + new FakerUtils().generateRandomNumber() + "@a.com");
+
+        AccountPage accountPage = new AccountPage(getDriver()).load();
+        accountPage.login(user.getUsername(), user.getPassword());
+        assertEquals(accountPage.getErrorText(), "Error: The username " + user.getUsername() +
+                " is not registered on this site." +
+                " If you are unsure of your username, try your email address instead.");
+    }
+
+    @Test
+    public void shouldNotLoginWithAnInvalidPassword(){
+        User user = new User("demouser" + new FakerUtils().generateRandomNumber(),
+                "demopwd" + new FakerUtils().generateRandomNumber(),
+                "demouser" + new FakerUtils().generateRandomNumber() + "@a.com");
+
+        new SignUpApi().register(user);
+
+        AccountPage accountPage = new AccountPage(getDriver()).load();
+        accountPage.login(user.getUsername(), "invalidPassword");
+        assertEquals(accountPage.getErrorText(), "Error: The password you entered for the username "
+                + user.getUsername() + " is incorrect. Lost your password?");
+    }
+}
